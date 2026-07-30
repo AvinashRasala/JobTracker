@@ -16,10 +16,22 @@ from app.models.application import ApplicationStatus
 
 # --- Status/kind detection, ordered by priority (checked top to bottom) ---
 _CONFIRMATION_PHRASES = [
-    "application has been received", "application received", "thank you for applying",
-    "application submitted", "we've received your application", "we have received your application",
-    "application confirmation", "your application has been submitted", "your application was sent",
-    "your application to", "your application for",
+    "application has been received",
+    "application received",
+    "application submitted",
+    "your application was sent",
+    "your application to",
+    "your application for",
+    "thanks for applying",
+    "thank you for applying",
+    "thanks for your interest",
+    "we have received your application",
+    "we've received your application",
+    "application successfully submitted",
+    "application successful",
+    "application sent",
+    "you have successfully applied",
+    "successfully applied",
 ]
 
 # Each entry: (keywords to look for in subject+body, resulting status)
