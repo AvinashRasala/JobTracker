@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-data: "IBM Plex Mono", monospace;
+}
+
+body {
+  background: #EEF1F6;
+  color: #171B26;
+}
+
+/* Signature element: postmark-style status stamp.
+   Dashed border + slight rotation, evokes a rubber ink stamp on a
+   waybill -- used consistently as the single visual signature across
+   the app instead of scattering different decorative motifs around. */
+.postmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1.5px dashed currentColor;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transform: rotate(-1.5deg);
+  white-space: nowrap;
+}
+
+.ledger-row + .ledger-row {
+  border-top: 1px dashed rgba(23, 27, 38, 0.14);
+}
+
+::selection {
+  background: #1F3A5F;
+  color: white;
+}
+
+:focus-visible {
+  outline: 2px solid #1F3A5F;
+  outline-offset: 2px;
+}

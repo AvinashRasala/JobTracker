@@ -1,0 +1,77 @@
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.*
+!.env.example
+frontend/.env.local
+backend/.env
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+pip-log.txt
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Node.js
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# Next.js
+# =========================
+.next/
+out/
+
+# =========================
+# Build Files
+# =========================
+build/
+dist/
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# SQLite
+# =========================
+*.db
+*.sqlite3
+
+# =========================
+# Cache
+# =========================
+.cache/
