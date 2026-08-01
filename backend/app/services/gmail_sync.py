@@ -27,7 +27,21 @@ from app.services.email_parser import parse_email
 # Reasonably broad net -- better to over-fetch and let per-message parsing
 # filter out noise than to miss a real application email with too narrow
 # a search.
-GMAIL_SEARCH_QUERY = "(application OR applying OR interview OR assessment OR offer OR rejected)"
+# Bare single words like "application" or "applying" match far too much --
+# job alert digests (LinkedIn, Indeed) are full of "Easy Apply" buttons and
+# crowd out genuine confirmation emails from the top of the result window.
+# Quoted phrases are exact-phrase matches in Gmail search, which cuts that
+# noise dramatically while still catching real confirmation wording.
+GMAIL_SEARCH_QUERY = (
+    '("thank you for applying" OR "application received" OR "application confirmed" OR '
+    '"application successful" OR "we have received your application" OR '
+    '"application submitted" OR "your application" OR interview OR assessment OR '
+    'offer OR rejected OR unfortunately) '
+    "-from:jobalerts-noreply@linkedin.com "
+    "-from:jobalert.indeed.com "
+    "-from:no-reply-chat@updates.internshala.com"
+)
+GMAIL_MAX_RESULTS = 100
 FIRST_SYNC_WINDOW_DAYS = 30
 
 TERMINAL_STATUSES = {
@@ -126,7 +140,7 @@ async def sync_gmail_for_user(db: Session, user: User) -> SyncResult:
     else:
         query = f"{GMAIL_SEARCH_QUERY} newer_than:{FIRST_SYNC_WINDOW_DAYS}d"
 
-    message_ids = await gmail_client.list_messages(access_token, query, max_results=50)
+    message_ids = await gmail_client.list_messages(access_token, query, max_results=GMAIL_MAX_RESULTS)
     platform_domain_map = _build_platform_domain_map(db)
 
     already_processed = {

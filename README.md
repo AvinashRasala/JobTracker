@@ -434,14 +434,108 @@ Happy to build it if you want to run that infrastructure.
 - `POST /api/gmail/sync` — manually trigger a sync
 - `DELETE /api/gmail/disconnect` — remove stored tokens
 
+---
+
+# Module 6: Chrome Extension (Instant Apply Capture)
+
+Auto-logs applications the moment you click Apply on LinkedIn, Naukri,
+Indeed, or Internshala — no manual entry, no waiting for a confirmation
+email.
+
+## What was tested, and what wasn't (read this first)
+
+Same honesty policy as the Gmail module — I can't load a real Chrome
+browser or visit live job sites from my build environment, so here's
+exactly what's verified:
+
+**Tested (20 automated tests passing, using jsdom against realistic HTML fixtures):**
+- Job title / company extraction for all 4 supported sites, using markup
+  that mirrors each site's real structure
+- Generic fallback extraction (og:title, `<h1>`, page title) for any other
+  company career page not in the specific-selector list
+- "Apply" button detection by visible text ("Easy Apply", "Apply now",
+  "Submit Application", etc.), including when the click lands on an inner
+  `<span>` inside the real button
+- **Negative cases**: a "Save for later" button and a large text block that
+  merely *contains* the word "apply" are correctly **not** detected — this
+  matters because false positives would silently log garbage applications
+- The exact JSON payload the extension sends was tested against the real
+  backend: creates the application, records `source: chrome_extension`
+  correctly, and a duplicate "Apply" click (page re-render, debounce
+  failure, etc.) is correctly rejected as a 409, not double-logged
+
+**Not tested (needs your real browser + real job sites to verify):**
+- Loading the extension in actual Chrome and clicking real Apply buttons
+- Whether LinkedIn/Naukri/Indeed/Internshala's *current* live markup matches
+  the selectors below — sites change their HTML periodically without
+  warning, and this is the one part of the whole project that will need
+  occasional maintenance as a result. If capture stops working for a
+  specific site, it's almost always a selector needing an update in
+  `extension/extractor.js`, not a deeper bug.
+
+Run the tests yourself anytime with:
+```bash
+cd extension
+npm install
+npm test
+```
+
+## Installing it (Chrome, unpacked/developer mode)
+
+This isn't published to the Chrome Web Store (that needs a $5 one-time
+developer fee and a review process) — you load it directly:
+
+1. Open `chrome://extensions`
+2. Toggle **Developer mode** on (top-right)
+3. **Load unpacked** → select the `extension/` folder
+4. Click the extension's icon in your toolbar → sign in with your JobTrack AI
+   account (same email/password as the web app)
+5. If your backend isn't on `localhost:8000`, update the **Backend URL**
+   field in the popup (e.g. your Render URL) and click Save
+
+## Using it
+
+Just browse LinkedIn/Naukri/Indeed/Internshala and click Apply / Easy Apply
+/ Submit Application as normal. A small confirmation toast appears in the
+corner of the page once it's logged. Check the **Applications** page in the
+web app — it should show up immediately (`source: Chrome Extension`).
+
+## If a site stops being detected correctly
+
+Open `extension/extractor.js` and look at `ROLE_SELECTORS` / `COMPANY_SELECTORS`
+for that platform. Right-click the job title or company name on the actual
+page → **Inspect** → find its CSS selector (class name, id, etc.) → add it
+to the front of that site's selector list → reload the extension at
+`chrome://extensions` (the reload icon on the card).
+
+## Using it against your deployed backend
+
+The manifest's `host_permissions` currently allow `localhost:8000` and any
+`*.onrender.com` subdomain. If you deploy the backend somewhere else, add
+that domain to `host_permissions` in `extension/manifest.json`, then reload
+the unpacked extension.
+
+## Project structure
+
+```
+extension/
+├── manifest.json       # MV3 config
+├── background.js       # service worker: owns the JWT token, calls the API
+├── content.js          # runs on job pages, detects Apply clicks
+├── extractor.js         # pure extraction logic (shared with tests)
+├── popup.html/css/js    # sign-in + backend URL settings
+├── icons/
+└── tests/
+    └── test_extractor.js
+```
+
 ## Next modules (in order)
 
 1. ~~Frontend dashboard~~ ✅ done
 2. ~~Interview tracking, follow-ups, offers, referrals~~ ✅ done
 3. ~~Account management: password visibility, profile, deactivate/delete~~ ✅ done
 4. ~~Gmail integration~~ ✅ done
-5. **Chrome extension** — instant capture on Apply click for LinkedIn, Naukri,
-   Indeed, and Internshala
+5. ~~Chrome extension~~ ✅ done
 6. **AI features** — ATS match score, cover letter generation, follow-up emails
 7. **Notifications, calendar sync, document management, exports (Excel/PDF)**
 

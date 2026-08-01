@@ -33,6 +33,7 @@ function SettingsPageInner() {
   const { data: gmailStatus } = useQuery({ queryKey: ["gmail-status"], queryFn: api.gmailStatus });
   const [gmailMessage, setGmailMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [syncResult, setSyncResult] = useState<string | null>(null);
+  const [syncErrors, setSyncErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const gmailParam = searchParams.get("gmail");
@@ -66,9 +67,10 @@ function SettingsPageInner() {
       queryClient.invalidateQueries({ queryKey: ["gmail-status"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-      setSyncResult(
-        `Synced: ${data.new_applications} new application(s), ${data.status_updates} status update(s), ${data.ignored} skipped.`
-      );
+      const summary = `Synced: ${data.new_applications} new application(s), ${data.status_updates} status update(s), ${data.ignored} skipped.`;
+      const errorNote = data.errors && data.errors.length > 0 ? ` (${data.errors.length} email(s) had errors — see below)` : "";
+      setSyncResult(summary + errorNote);
+      setSyncErrors(data.errors || []);
     },
     onError: (err) => setGmailMessage({ type: "error", text: err instanceof ApiError ? err.message : "Sync failed." }),
   });
@@ -78,6 +80,7 @@ function SettingsPageInner() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["gmail-status"] });
       setSyncResult(null);
+      setSyncErrors([]);
     },
   });
 
@@ -338,6 +341,13 @@ function SettingsPageInner() {
             )}
           </div>
           {syncResult && <p className="mt-3 text-sm text-ink-soft">{syncResult}</p>}
+          {syncErrors.length > 0 && (
+            <ul className="mt-2 space-y-1 text-xs text-stamp-red">
+              {syncErrors.map((err, i) => (
+                <li key={i}>{err}</li>
+              ))}
+            </ul>
+          )}
         </Card>
 
         {/* Danger zone */}

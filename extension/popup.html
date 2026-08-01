@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>JobTrack AI</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="header">
+    <span class="stamp">JobTrack AI</span>
+  </div>
+
+  <div id="status-connected" class="section hidden">
+    <p class="status-line"><span class="dot dot-green"></span> Connected</p>
+    <p class="muted" id="api-url-display"></p>
+    <button id="signout-btn" class="btn btn-secondary">Sign out</button>
+  </div>
+
+  <div id="status-disconnected" class="section">
+    <p class="muted">Sign in to auto-log applications as you apply.</p>
+    <form id="login-form">
+      <label>Email</label>
+      <input type="email" id="email" required placeholder="you@example.com" />
+      <label>Password</label>
+      <input type="password" id="password" required placeholder="••••••••" />
+      <p id="login-error" class="error hidden"></p>
+      <button type="submit" class="btn btn-primary">Sign in</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <label>Backend URL</label>
+    <input type="text" id="api-base-url" placeholder="http://localhost:8000" />
+    <p class="muted small">Point this at your deployed backend (e.g. https://your-app.onrender.com) once it's live.</p>
+    <button id="save-url-btn" class="btn btn-secondary btn-sm">Save</button>
+    <p id="save-url-confirm" class="confirm hidden">Saved</p>
+  </div>
+
+  <div class="footer">
+    <p class="muted small">Works on LinkedIn, Naukri, Indeed, and Internshala job pages. Click Apply as normal — it logs automatically.</p>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
