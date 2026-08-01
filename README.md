@@ -418,6 +418,30 @@ docker compose exec backend alembic upgrade head
 2. **"Sync now"** — manually triggered for now (no background scheduler wired up yet, see below). Searches recent job-related emails, skips anything already processed, creates new applications from confirmation emails, and updates existing ones' status from interview/offer/rejection/assessment emails matched by company name
 3. Every processed email is recorded (`processed_gmail_messages` table) so syncing repeatedly is always safe — nothing is ever double-counted
 
+## Known fixes since initial release
+
+**Search query was too broad, and the sync watermark had a real bug.**
+The original search query (`application OR applying OR interview OR ...`)
+matched far too much — job-alert digest emails (LinkedIn, Indeed) contain
+words like "apply" everywhere and were crowding real confirmation emails
+out of the search results. Fixed by:
+- Using quoted exact phrases ("thank you for applying", "application
+  confirmed", etc.) instead of bare common words
+- Excluding known noisy senders (job alert / chat notification addresses)
+- **Removing the "only search since last sync" optimization entirely.**
+  This was a real bug: once any sync ran — even one that found nothing
+  useful — it permanently narrowed every future search to "after that
+  point," so an older email a buggy/narrow earlier sync missed could never
+  be found again. Every sync now re-scans a rolling 30-day window; dedup
+  is handled safely by the `processed_gmail_messages` table regardless
+  (already-processed messages are skipped without an extra API call), so
+  this is both more correct and still cheap.
+- Sync errors (previously silently swallowed) now display in the Settings
+  UI under the sync result
+
+Covered by a permanent regression test:
+`tests/test_gmail_sync.py::test_old_email_still_found_after_a_previous_sync_ran`
+
 ## What's intentionally not automatic yet
 
 There's no background job polling Gmail every N minutes — "Sync now" is a

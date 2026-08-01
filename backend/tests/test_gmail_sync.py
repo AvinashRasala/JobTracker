@@ -112,3 +112,35 @@ async def test_resync_is_idempotent(db, gmail_user):
 
     apps = db.query(Application).filter(Application.user_id == gmail_user.id).all()
     assert len(apps) == 1  # no duplicate created on re-sync
+
+
+@pytest.mark.asyncio
+async def test_old_email_still_found_after_a_previous_sync_ran(db, gmail_user):
+    """
+    Regression test for a real bug: once any sync ran and set
+    last_gmail_sync_at, an older email that a prior (possibly buggy) sync
+    failed to fetch would be permanently invisible to every future sync,
+    since the search window was "after: last sync". Sync must always
+    re-scan a rolling window and rely on ProcessedGmailMessage for dedup
+    instead, so a message that was missed once can still be found later.
+    """
+    from datetime import datetime, timedelta
+
+    gmail_user.last_gmail_sync_at = datetime.utcnow() - timedelta(hours=2)
+
+    async def fake_refresh(refresh_token):
+        return {"access_token": "fake-access-token"}
+
+    async def fake_list(access_token, query, max_results=25):
+        assert "after:" not in query, "must not use an after-last-sync watermark"
+        return ["msg-1"]  # the confirmation email, "older" than last_gmail_sync_at
+
+    async def fake_get(access_token, message_id):
+        return FAKE_MESSAGES["msg-1"]
+
+    with patch("app.services.gmail_sync.gmail_client.refresh_access_token", new=AsyncMock(side_effect=fake_refresh)), \
+         patch("app.services.gmail_sync.gmail_client.list_messages", new=AsyncMock(side_effect=fake_list)), \
+         patch("app.services.gmail_sync.gmail_client.get_message", new=AsyncMock(side_effect=fake_get)):
+        result = await gmail_sync.sync_gmail_for_user(db, gmail_user)
+
+    assert result.new_applications == 1

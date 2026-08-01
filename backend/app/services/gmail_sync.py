@@ -42,7 +42,7 @@ GMAIL_SEARCH_QUERY = (
     "-from:no-reply-chat@updates.internshala.com"
 )
 GMAIL_MAX_RESULTS = 100
-FIRST_SYNC_WINDOW_DAYS = 30
+SYNC_WINDOW_DAYS = 30  # always searches this many days back, every sync -- see comment below
 
 TERMINAL_STATUSES = {
     ApplicationStatus.OFFER_RECEIVED,
@@ -135,10 +135,16 @@ async def sync_gmail_for_user(db: Session, user: User) -> SyncResult:
         user.google_refresh_token_encrypted = encrypt_token(token_data["refresh_token"])
     user.google_access_token_encrypted = encrypt_token(access_token)
 
-    if user.last_gmail_sync_at:
-        query = f"{GMAIL_SEARCH_QUERY} after:{user.last_gmail_sync_at.strftime('%Y/%m/%d')}"
-    else:
-        query = f"{GMAIL_SEARCH_QUERY} newer_than:{FIRST_SYNC_WINDOW_DAYS}d"
+    # Always search a rolling window rather than "since last sync". An
+    # incremental after-last-sync watermark sounds more efficient, but has
+    # a real failure mode: if an earlier sync's search missed a message
+    # (e.g. it got crowded out of the result window, or the query wasn't
+    # matching what it should have), the watermark still advances past it,
+    # permanently excluding that message from every future sync. Since
+    # ProcessedGmailMessage already makes re-scanning the same window safe
+    # (already-processed messages are skipped before any extra API call),
+    # there's no correctness reason to use "after: last sync" here.
+    query = f"{GMAIL_SEARCH_QUERY} newer_than:{SYNC_WINDOW_DAYS}d"
 
     message_ids = await gmail_client.list_messages(access_token, query, max_results=GMAIL_MAX_RESULTS)
     platform_domain_map = _build_platform_domain_map(db)
