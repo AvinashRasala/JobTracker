@@ -47,6 +47,14 @@ CASES = [
     ("Newsletter <news@randomsite.com>", "10 tips for your career",
      "Check out our latest blog post about career growth.",
      "unrelated", None, None, None),
+    # Regression test: this was a real bug -- the bare word "unfortunately"
+    # was being treated as a rejection signal, so any confirmation email
+    # that happened to contain it as incidental boilerplate got silently
+    # misclassified as a rejection and applied to the wrong application.
+    ("LinkedIn <jobs-noreply@linkedin.com>", "Your application for Backend Engineer at Acme Corp",
+     "Your application for Backend Engineer at Acme Corp has been received. "
+     "Note: unfortunately, some profile fields could not be auto-filled from your resume.",
+     "confirmation", "linkedin", "Acme Corp", None),
 ]
 
 

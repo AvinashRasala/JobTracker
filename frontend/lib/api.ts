@@ -219,6 +219,20 @@ export const api = {
 
   gmailDisconnect: () => request<void>("/api/gmail/disconnect", { method: "DELETE" }),
 
+  gmailRecentChanges: () =>
+    request<
+      {
+        status_history_id: string;
+        application_id: string;
+        role_title: string;
+        company_name: string | null;
+        from_status: string | null;
+        to_status: string;
+        note: string | null;
+        created_at: string;
+      }[]
+    >("/api/gmail/recent-changes"),
+
   dashboardStats: () => request<DashboardStats>("/api/dashboard/stats"),
   statusDistribution: () => request<StatusCount[]>("/api/dashboard/status-distribution"),
   platformDistribution: () => request<PlatformCount[]>("/api/dashboard/platform-distribution"),

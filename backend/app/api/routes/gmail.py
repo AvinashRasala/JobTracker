@@ -7,8 +7,10 @@ from app.config import settings
 from app.core.crypto import encrypt_token
 from app.core.security import decode_access_token, create_access_token
 from app.database import get_db
+from app.models.application import Application
+from app.models.status_history import StatusHistory
 from app.models.user import User
-from app.schemas.gmail import GmailStatus, GmailSyncResult, GmailAuthUrl
+from app.schemas.gmail import GmailStatus, GmailSyncResult, GmailAuthUrl, GmailStatusChange
 from app.services import gmail_client
 from app.services.gmail_sync import sync_gmail_for_user
 
@@ -94,3 +96,37 @@ def gmail_disconnect(db: Session = Depends(get_db), current_user: User = Depends
     current_user.last_gmail_sync_at = None
     db.commit()
     return None
+
+
+@router.get("/recent-changes", response_model=list[GmailStatusChange])
+def gmail_recent_changes(
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Every status change the Gmail sync has made for this user, most recent
+    first -- lets you audit (and, from the applications list, manually
+    revert via the status dropdown) anything that got misclassified.
+    """
+    rows = (
+        db.query(StatusHistory, Application)
+        .join(Application, Application.id == StatusHistory.application_id)
+        .filter(Application.user_id == current_user.id, StatusHistory.changed_by == "system:gmail_parser")
+        .order_by(StatusHistory.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        GmailStatusChange(
+            status_history_id=history.id,
+            application_id=application.id,
+            role_title=application.role_title,
+            company_name=application.company.name if application.company else None,
+            from_status=history.from_status.value if history.from_status else None,
+            to_status=history.to_status.value,
+            note=history.note,
+            created_at=history.created_at,
+        )
+        for history, application in rows
+    ]

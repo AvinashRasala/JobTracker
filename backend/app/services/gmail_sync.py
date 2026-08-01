@@ -27,16 +27,25 @@ from app.services.email_parser import parse_email
 # Reasonably broad net -- better to over-fetch and let per-message parsing
 # filter out noise than to miss a real application email with too narrow
 # a search.
-# Bare single words like "application" or "applying" match far too much --
-# job alert digests (LinkedIn, Indeed) are full of "Easy Apply" buttons and
-# crowd out genuine confirmation emails from the top of the result window.
-# Quoted phrases are exact-phrase matches in Gmail search, which cuts that
-# noise dramatically while still catching real confirmation wording.
+# Every term is a quoted exact phrase, not a bare word. Bare words like
+# "application", "offer", or especially "unfortunately" match almost any
+# email (job-alert digests are full of "Easy Apply" buttons; "unfortunately"
+# appears in all kinds of unrelated correspondence) -- this both crowds
+# genuine confirmation emails out of the result window AND, worse, gets
+# misclassified as a real status update and silently applied to the wrong
+# application. Every phrase here matches the same phrasing the classifier
+# in email_parser.py actually looks for, so nothing gets fetched that
+# couldn't also be correctly classified.
 GMAIL_SEARCH_QUERY = (
     '("thank you for applying" OR "application received" OR "application confirmed" OR '
     '"application successful" OR "we have received your application" OR '
-    '"application submitted" OR "your application" OR interview OR assessment OR '
-    'offer OR rejected OR unfortunately) '
+    '"application submitted" OR "your application" OR '
+    '"schedule an interview" OR "interview invitation" OR "would like to interview" OR '
+    '"technical interview" OR "coding challenge" OR "online assessment" OR '
+    '"skills assessment" OR "complete an assessment" OR '
+    '"pleased to offer" OR "job offer" OR "offer letter" OR "extend an offer" OR '
+    '"regret to inform" OR "not moving forward" OR "will not be proceeding" OR '
+    '"decided not to move forward" OR "not selected") '
     "-from:jobalerts-noreply@linkedin.com "
     "-from:jobalert.indeed.com "
     "-from:no-reply-chat@updates.internshala.com"

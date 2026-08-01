@@ -25,7 +25,7 @@ _CONFIRMATION_PHRASES = [
 # Each entry: (keywords to look for in subject+body, resulting status)
 _STATUS_RULES: list[tuple[list[str], ApplicationStatus | None]] = [
     (["pleased to offer", "job offer", "offer letter", "excited to offer", "extend an offer"], ApplicationStatus.OFFER_RECEIVED),
-    (["unfortunately", "not moving forward", "will not be proceeding", "regret to inform",
+    (["not moving forward", "will not be proceeding", "regret to inform",
       "decided not to move forward", "other candidates", "not selected", "unable to offer"], ApplicationStatus.REJECTED),
     (["schedule an interview", "interview invitation", "would like to interview",
       "next round", "technical interview", "interview with"], ApplicationStatus.INTERVIEW_ROUND_1),

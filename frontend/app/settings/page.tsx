@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Camera, Trash2, Mail, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Camera, Trash2, Mail, RefreshCw, CheckCircle2, Undo2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Input, Label } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { api, resolveAssetUrl, ApiError, clearToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { ApplicationStatus, STATUS_LABELS } from "@/lib/types";
 
 export default function SettingsPage() {
   return (
@@ -67,6 +68,7 @@ function SettingsPageInner() {
       queryClient.invalidateQueries({ queryKey: ["gmail-status"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-recent-changes"] });
       const summary = `Synced: ${data.new_applications} new application(s), ${data.status_updates} status update(s), ${data.ignored} skipped.`;
       const errorNote = data.errors && data.errors.length > 0 ? ` (${data.errors.length} email(s) had errors — see below)` : "";
       setSyncResult(summary + errorNote);
@@ -81,6 +83,22 @@ function SettingsPageInner() {
       queryClient.invalidateQueries({ queryKey: ["gmail-status"] });
       setSyncResult(null);
       setSyncErrors([]);
+    },
+  });
+
+  const { data: recentChanges, isLoading: recentChangesLoading } = useQuery({
+    queryKey: ["gmail-recent-changes"],
+    queryFn: api.gmailRecentChanges,
+    enabled: !!gmailStatus?.connected,
+  });
+
+  const revertMutation = useMutation({
+    mutationFn: ({ applicationId, toStatus }: { applicationId: string; toStatus: string }) =>
+      api.updateStatus(applicationId, toStatus as ApplicationStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gmail-recent-changes"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
   });
 
@@ -349,6 +367,54 @@ function SettingsPageInner() {
             </ul>
           )}
         </Card>
+
+        {/* Recent Gmail-caused changes, for auditing/reverting */}
+        {gmailStatus?.connected && recentChanges && recentChanges.length > 0 && (
+          <Card className="p-5 lg:col-span-2">
+            <h3 className="font-display text-sm font-semibold text-ink">Recent Gmail changes</h3>
+            <p className="mt-1 text-sm text-ink-soft">
+              Every status change the Gmail sync has made. If anything looks wrong, revert it back to its
+              previous status.
+            </p>
+            <div className="mt-4 space-y-3">
+              {recentChangesLoading ? (
+                <p className="text-sm text-ink-soft">Loading…</p>
+              ) : (
+                recentChanges.map((change) => (
+                  <div
+                    key={change.status_history_id}
+                    className="ledger-row flex flex-col gap-2 pt-3 first:pt-0 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-ink">
+                        {change.role_title}
+                        {change.company_name ? ` · ${change.company_name}` : ""}
+                      </p>
+                      <p className="mt-0.5 font-mono text-xs text-ink-soft">
+                        {change.from_status ? STATUS_LABELS[change.from_status as ApplicationStatus] : "—"} →{" "}
+                        {STATUS_LABELS[change.to_status as ApplicationStatus]} ·{" "}
+                        {new Date(change.created_at).toLocaleString()}
+                      </p>
+                      {change.note && <p className="mt-0.5 text-xs text-ink-soft">{change.note}</p>}
+                    </div>
+                    {change.from_status && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          revertMutation.mutate({ applicationId: change.application_id, toStatus: change.from_status! })
+                        }
+                        disabled={revertMutation.isPending}
+                      >
+                        <Undo2 size={14} /> Revert to {STATUS_LABELS[change.from_status as ApplicationStatus]}
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Danger zone */}
         <Card className="border-stamp-red/40 p-5 lg:col-span-2">

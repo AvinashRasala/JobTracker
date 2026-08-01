@@ -418,6 +418,35 @@ docker compose exec backend alembic upgrade head
 2. **"Sync now"** — manually triggered for now (no background scheduler wired up yet, see below). Searches recent job-related emails, skips anything already processed, creates new applications from confirmation emails, and updates existing ones' status from interview/offer/rejection/assessment emails matched by company name
 3. Every processed email is recorded (`processed_gmail_messages` table) so syncing repeatedly is always safe — nothing is ever double-counted
 
+**More serious bug: bare word "unfortunately" was silently misclassifying
+emails as rejections.** The status-detection rules included the single
+word `"unfortunately"` as a rejection signal, checked before confirmation
+phrases. Since that word appears in all kinds of unrelated boilerplate
+(disclaimers, unrelated correspondence, even incidental phrasing inside a
+genuine confirmation email), this caused real, active applications to get
+silently marked as Rejected. Fixed by:
+- Removing the bare word entirely from the classifier — rejections now
+  require one of several more specific phrases ("regret to inform", "not
+  moving forward", "not selected", etc.)
+- Quoting every remaining term in the *search query* too (interview,
+  assessment, offer, rejection phrases), not just the confirmation ones —
+  the bare words there were also over-fetching irrelevant emails
+- Adding **`GET /api/gmail/recent-changes`** and a "Recent Gmail changes"
+  panel in Settings, listing every status change the sync has made with a
+  one-click **Revert** button — if a future misclassification slips
+  through, you can see and undo it in one place instead of hunting through
+  applications individually
+
+Covered by a permanent regression test proving an email containing
+"unfortunately" as incidental text is still correctly classified as a
+confirmation, not a rejection
+(`tests/test_email_parser.py`, the last parametrized case).
+
+**If you were affected by this bug before the fix**: open **Settings**,
+scroll to "Recent Gmail changes," and review/revert anything incorrect.
+The panel only appears once Gmail is connected and shows changes going
+back through your sync history.
+
 ## Known fixes since initial release
 
 **Search query was too broad, and the sync watermark had a real bug.**

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -17,3 +18,14 @@ class GmailSyncResult(BaseModel):
 
 class GmailAuthUrl(BaseModel):
     auth_url: str
+
+
+class GmailStatusChange(BaseModel):
+    status_history_id: uuid.UUID
+    application_id: uuid.UUID
+    role_title: str
+    company_name: str | None
+    from_status: str | None
+    to_status: str
+    note: str | None
+    created_at: datetime
