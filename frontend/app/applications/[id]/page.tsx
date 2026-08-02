@@ -13,6 +13,7 @@ import { StatusStamp } from "@/components/ui/status-stamp";
 import { InterviewRoundsPanel } from "@/components/interview-rounds-panel";
 import { api } from "@/lib/api";
 import { ApplicationStatus, STATUS_LABELS } from "@/lib/types";
+import { formatDateShort } from "@/lib/dates";
 
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS) as [ApplicationStatus, string][];
 
@@ -113,7 +114,7 @@ export default function ApplicationDetailPage() {
             )}
           </h2>
           <p className="mt-1 font-mono text-sm text-ink-soft">
-            Applied {new Date(application.applied_at).toISOString().slice(0, 10)}
+            Applied {formatDateShort(application.applied_at)}
           </p>
         </div>
         <div className="flex items-center gap-3">

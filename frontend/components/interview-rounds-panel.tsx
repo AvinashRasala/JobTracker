@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { formatDateTime } from "@/lib/dates";
 import {
   InterviewMode,
   InterviewOutcome,
@@ -47,7 +48,16 @@ export function InterviewRoundsPanel({ applicationId }: { applicationId: string 
   const createMutation = useMutation({
     mutationFn: () => {
       const payload: Record<string, unknown> = { ...form };
-      if (!form.scheduled_at) delete payload.scheduled_at;
+      // <input type="datetime-local"> gives local wall-clock time with no
+      // timezone marker (e.g. "2026-08-05T14:30"). Converting through
+      // `new Date(...)` (which correctly treats a marker-less string as
+      // local time) then `.toISOString()` gives the backend an unambiguous
+      // UTC timestamp, matching what the display-side formatting expects.
+      if (form.scheduled_at) {
+        payload.scheduled_at = new Date(form.scheduled_at).toISOString();
+      } else {
+        delete payload.scheduled_at;
+      }
       if (!form.interviewer_name) delete payload.interviewer_name;
       if (!form.interviewer_designation) delete payload.interviewer_designation;
       return api.createInterviewRound(applicationId, payload);
@@ -158,7 +168,7 @@ export function InterviewRoundsPanel({ applicationId }: { applicationId: string 
                   <p className="mt-0.5 font-mono text-xs text-ink-soft">
                     {INTERVIEW_MODE_LABELS[round.mode]}
                     {round.interviewer_name ? ` · ${round.interviewer_name}` : ""}
-                    {round.scheduled_at ? ` · ${new Date(round.scheduled_at).toLocaleString()}` : ""}
+                    {round.scheduled_at ? ` · ${formatDateTime(round.scheduled_at)}` : ""}
                   </p>
                   {round.feedback && <p className="mt-1 text-sm text-ink-soft">{round.feedback}</p>}
                 </div>

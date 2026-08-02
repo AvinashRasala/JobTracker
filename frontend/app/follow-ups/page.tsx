@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusStamp } from "@/components/ui/status-stamp";
 import { api } from "@/lib/api";
+import { formatDateShort } from "@/lib/dates";
 
 export default function FollowUpsPage() {
   const queryClient = useQueryClient();
@@ -64,7 +65,7 @@ export default function FollowUpsPage() {
                     )}
                   </div>
                   <p className="mt-0.5 font-mono text-xs text-ink-soft">
-                    Follow-up was due {app.follow_up_at ? new Date(app.follow_up_at).toISOString().slice(0, 10) : "—"}
+                    Follow-up was due {formatDateShort(app.follow_up_at)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

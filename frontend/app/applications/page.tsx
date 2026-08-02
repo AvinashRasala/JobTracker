@@ -13,6 +13,7 @@ import { StatusStamp } from "@/components/ui/status-stamp";
 import { AddApplicationDialog } from "@/components/add-application-dialog";
 import { api } from "@/lib/api";
 import { ApplicationStatus, STATUS_LABELS } from "@/lib/types";
+import { formatDateShort, isPastOrNow } from "@/lib/dates";
 
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS) as [ApplicationStatus, string][];
 
@@ -126,14 +127,14 @@ export default function ApplicationsPage() {
                         <ExternalLink size={13} />
                       </a>
                     )}
-                    {app.follow_up_at && new Date(app.follow_up_at) <= new Date() && (
+                    {app.follow_up_at && isPastOrNow(app.follow_up_at) && (
                       <span className="flex items-center gap-1 text-xs font-medium text-stamp-amber">
                         <BellRing size={12} /> Follow up
                       </span>
                     )}
                   </div>
                   <p className="mt-0.5 font-mono text-xs text-ink-soft">
-                    {new Date(app.applied_at).toISOString().slice(0, 10)}
+                    {formatDateShort(app.applied_at)}
                     {app.location ? ` · ${app.location}` : ""}
                     {app.work_type !== "unknown" ? ` · ${app.work_type}` : ""}
                   </p>

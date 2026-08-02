@@ -12,6 +12,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { api, resolveAssetUrl, ApiError, clearToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { ApplicationStatus, STATUS_LABELS } from "@/lib/types";
+import { formatDateTime } from "@/lib/dates";
 
 export default function SettingsPage() {
   return (
@@ -349,7 +350,7 @@ function SettingsPageInner() {
                   <CheckCircle2 size={16} /> Connected
                   {gmailStatus.last_synced_at && (
                     <span className="text-ink-soft">
-                      · last synced {new Date(gmailStatus.last_synced_at).toLocaleString()}
+                      · last synced {formatDateTime(gmailStatus.last_synced_at)}
                     </span>
                   )}
                 </span>
@@ -401,7 +402,7 @@ function SettingsPageInner() {
                       <p className="mt-0.5 font-mono text-xs text-ink-soft">
                         {change.from_status ? STATUS_LABELS[change.from_status as ApplicationStatus] : "—"} →{" "}
                         {STATUS_LABELS[change.to_status as ApplicationStatus]} ·{" "}
-                        {new Date(change.created_at).toLocaleString()}
+                        {formatDateTime(change.created_at)}
                       </p>
                       {change.note && <p className="mt-0.5 text-xs text-ink-soft">{change.note}</p>}
                     </div>
@@ -453,7 +454,7 @@ function SettingsPageInner() {
                       <div key={i} className="ledger-row pt-2 first:pt-0">
                         <p className="text-sm text-ink">{email.subject || "(no subject)"}</p>
                         <p className="mt-0.5 font-mono text-xs text-ink-soft">
-                          {email.sender || "unknown sender"} · {new Date(email.created_at).toLocaleString()}
+                          {email.sender || "unknown sender"} · {formatDateTime(email.created_at)}
                         </p>
                       </div>
                     ))}

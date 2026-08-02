@@ -449,6 +449,27 @@ back through your sync history.
 
 ## Known fixes since initial release
 
+**Timestamps were displaying ~5.5 hours off for IST users (and off by
+whatever the viewer's UTC offset is, generally).** The backend correctly
+stores everything in UTC, but serializes datetimes without a timezone
+marker (e.g. `"2026-08-02T05:33:51"` instead of `"...Z"`). Per the
+JavaScript spec, a date-time string with no timezone offset is parsed as
+**local** time, not UTC — so every timestamp shown anywhere in the app
+(last synced, applied dates, interview times, status-change history, etc.)
+was silently shifted by the browser's UTC offset. Fixed with a shared
+`frontend/lib/dates.ts` utility that normalizes to UTC before parsing, used
+everywhere a date from the API is displayed. Also fixed the reverse
+direction: the interview round's "Scheduled at" field (`datetime-local`
+input) was sending local wall-clock time to the backend with no conversion,
+which would have gotten silently mislabeled as UTC on storage — now
+converted to a proper UTC ISO string before submission.
+
+Verified directly: parsed the exact raw string format the API returns
+under a forced `Asia/Kolkata` timezone and confirmed the old parsing was
+off by exactly -5.5 hours (matching IST's UTC+5:30 offset) while the fixed
+version round-trips to the correct instant.
+
+
 **Skipped-email visibility (migration `0005`).** Added `GET /api/gmail/skipped-emails`
 and a "Recently skipped emails" collapsible panel in Settings, showing the
 subject/sender of every email the sync found but deliberately didn't act
