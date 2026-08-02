@@ -8,9 +8,10 @@ from app.core.crypto import encrypt_token
 from app.core.security import decode_access_token, create_access_token
 from app.database import get_db
 from app.models.application import Application
+from app.models.gmail_sync import ProcessedGmailMessage
 from app.models.status_history import StatusHistory
 from app.models.user import User
-from app.schemas.gmail import GmailStatus, GmailSyncResult, GmailAuthUrl, GmailStatusChange
+from app.schemas.gmail import GmailStatus, GmailSyncResult, GmailAuthUrl, GmailStatusChange, GmailSkippedEmail
 from app.services import gmail_client
 from app.services.gmail_sync import sync_gmail_for_user
 
@@ -129,4 +130,30 @@ def gmail_recent_changes(
             created_at=history.created_at,
         )
         for history, application in rows
+    ]
+
+
+@router.get("/skipped-emails", response_model=list[GmailSkippedEmail])
+def gmail_skipped_emails(
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Emails the sync found but deliberately didn't act on -- either they
+    didn't match a specific enough confirmation/status phrase, or they
+    looked like a status update but couldn't be confidently matched to any
+    existing application. Shown so you can judge for yourself whether
+    anything real is being missed.
+    """
+    rows = (
+        db.query(ProcessedGmailMessage)
+        .filter(ProcessedGmailMessage.user_id == current_user.id, ProcessedGmailMessage.action_taken == "ignored")
+        .order_by(ProcessedGmailMessage.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        GmailSkippedEmail(subject=row.subject, sender=row.sender, created_at=row.created_at)
+        for row in rows
     ]

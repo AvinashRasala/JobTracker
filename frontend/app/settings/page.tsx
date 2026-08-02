@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Camera, Trash2, Mail, RefreshCw, CheckCircle2, Undo2 } from "lucide-react";
+import { Camera, Trash2, Mail, RefreshCw, CheckCircle2, Undo2, ChevronDown, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,6 +69,7 @@ function SettingsPageInner() {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       queryClient.invalidateQueries({ queryKey: ["gmail-recent-changes"] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-skipped-emails"] });
       const summary = `Synced: ${data.new_applications} new application(s), ${data.status_updates} status update(s), ${data.ignored} skipped.`;
       const errorNote = data.errors && data.errors.length > 0 ? ` (${data.errors.length} email(s) had errors — see below)` : "";
       setSyncResult(summary + errorNote);
@@ -90,6 +91,13 @@ function SettingsPageInner() {
     queryKey: ["gmail-recent-changes"],
     queryFn: api.gmailRecentChanges,
     enabled: !!gmailStatus?.connected,
+  });
+
+  const [showSkipped, setShowSkipped] = useState(false);
+  const { data: skippedEmails, isLoading: skippedLoading } = useQuery({
+    queryKey: ["gmail-skipped-emails"],
+    queryFn: api.gmailSkippedEmails,
+    enabled: !!gmailStatus?.connected && showSkipped,
   });
 
   const revertMutation = useMutation({
@@ -413,6 +421,46 @@ function SettingsPageInner() {
                 ))
               )}
             </div>
+          </Card>
+        )}
+
+        {/* Skipped emails, for transparency into what the sync deliberately didn't act on */}
+        {gmailStatus?.connected && (
+          <Card className="p-5 lg:col-span-2">
+            <button
+              type="button"
+              onClick={() => setShowSkipped((s) => !s)}
+              className="flex w-full items-center gap-1.5 text-left"
+            >
+              {showSkipped ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              <h3 className="font-display text-sm font-semibold text-ink">Recently skipped emails</h3>
+            </button>
+            <p className="mt-1 text-sm text-ink-soft">
+              Emails the sync found but didn't act on — either the wording wasn't specific enough to be sure it's a
+              real confirmation/status update, or it couldn't be confidently matched to one of your applications.
+              This is usually correct behavior, but check here if you think something real got missed.
+            </p>
+
+            {showSkipped && (
+              <div className="mt-4">
+                {skippedLoading ? (
+                  <p className="text-sm text-ink-soft">Loading…</p>
+                ) : !skippedEmails || skippedEmails.length === 0 ? (
+                  <p className="text-sm text-ink-soft">Nothing skipped in your recent sync history.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {skippedEmails.map((email, i) => (
+                      <div key={i} className="ledger-row pt-2 first:pt-0">
+                        <p className="text-sm text-ink">{email.subject || "(no subject)"}</p>
+                        <p className="mt-0.5 font-mono text-xs text-ink-soft">
+                          {email.sender || "unknown sender"} · {new Date(email.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </Card>
         )}
 

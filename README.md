@@ -449,6 +449,17 @@ back through your sync history.
 
 ## Known fixes since initial release
 
+**Skipped-email visibility (migration `0005`).** Added `GET /api/gmail/skipped-emails`
+and a "Recently skipped emails" collapsible panel in Settings, showing the
+subject/sender of every email the sync found but deliberately didn't act
+on — either because the wording wasn't specific enough to be confident it's
+a real confirmation/status update, or because it looked like a status
+update but couldn't be matched to any existing application by company
+name. This is usually correct, conservative behavior (skipping an
+ambiguous email is safer than guessing wrong), but the panel exists so you
+can judge for yourself rather than just trusting the "X skipped" count
+blindly.
+
 **Search query was too broad, and the sync watermark had a real bug.**
 The original search query (`application OR applying OR interview OR ...`)
 matched far too much — job-alert digest emails (LinkedIn, Indeed) contain

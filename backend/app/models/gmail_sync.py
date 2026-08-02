@@ -22,4 +22,6 @@ class ProcessedGmailMessage(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     gmail_message_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     action_taken: Mapped[str] = mapped_column(String(50), nullable=True)  # "created_application", "status_update", "ignored"
+    subject: Mapped[str] = mapped_column(String(500), nullable=True)
+    sender: Mapped[str] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

@@ -227,7 +227,13 @@ async def sync_gmail_for_user(db: Session, user: User) -> SyncResult:
             if action == "ignored":
                 result.ignored += 1
 
-            db.add(ProcessedGmailMessage(user_id=user.id, gmail_message_id=message_id, action_taken=action))
+            db.add(ProcessedGmailMessage(
+                user_id=user.id,
+                gmail_message_id=message_id,
+                action_taken=action,
+                subject=message["subject"][:500] if message.get("subject") else None,
+                sender=message["from"][:255] if message.get("from") else None,
+            ))
             db.commit()
         except Exception as e:  # noqa: BLE001 -- one bad message shouldn't abort the whole sync
             db.rollback()

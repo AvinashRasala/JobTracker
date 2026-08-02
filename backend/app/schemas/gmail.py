@@ -29,3 +29,9 @@ class GmailStatusChange(BaseModel):
     to_status: str
     note: str | None
     created_at: datetime
+
+
+class GmailSkippedEmail(BaseModel):
+    subject: str | None
+    sender: str | None
+    created_at: datetime
