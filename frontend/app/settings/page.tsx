@@ -450,12 +450,22 @@ function SettingsPageInner() {
                   <p className="text-sm text-ink-soft">Nothing skipped in your recent sync history.</p>
                 ) : (
                   <div className="space-y-2">
-                    {skippedEmails.map((email, i) => (
-                      <div key={i} className="ledger-row pt-2 first:pt-0">
-                        <p className="text-sm text-ink">{email.subject || "(no subject)"}</p>
-                        <p className="mt-0.5 font-mono text-xs text-ink-soft">
-                          {email.sender || "unknown sender"} · {formatDateTime(email.created_at)}
-                        </p>
+                    {skippedEmails.map((email) => (
+                      <div key={email.gmail_message_id} className="ledger-row flex items-start justify-between gap-3 pt-2 first:pt-0">
+                        <div className="min-w-0">
+                          <p className="text-sm text-ink">{email.subject || "(no subject)"}</p>
+                          <p className="mt-0.5 font-mono text-xs text-ink-soft">
+                            {email.sender || "unknown sender"} · {formatDateTime(email.created_at)}
+                          </p>
+                        </div>
+                        <a
+                          href={`https://mail.google.com/mail/u/0/#all/${email.gmail_message_id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-shrink-0 text-xs font-medium text-ledger hover:underline"
+                        >
+                          Open in Gmail
+                        </a>
                       </div>
                     ))}
                   </div>

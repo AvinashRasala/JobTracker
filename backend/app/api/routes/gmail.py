@@ -154,6 +154,6 @@ def gmail_skipped_emails(
         .all()
     )
     return [
-        GmailSkippedEmail(subject=row.subject, sender=row.sender, created_at=row.created_at)
+        GmailSkippedEmail(gmail_message_id=row.gmail_message_id, subject=row.subject, sender=row.sender, created_at=row.created_at)
         for row in rows
     ]

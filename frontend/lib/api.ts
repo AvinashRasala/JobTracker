@@ -234,7 +234,9 @@ export const api = {
     >("/api/gmail/recent-changes"),
 
   gmailSkippedEmails: () =>
-    request<{ subject: string | null; sender: string | null; created_at: string }[]>("/api/gmail/skipped-emails"),
+    request<{ gmail_message_id: string; subject: string | null; sender: string | null; created_at: string }[]>(
+      "/api/gmail/skipped-emails"
+    ),
 
   dashboardStats: () => request<DashboardStats>("/api/dashboard/stats"),
   statusDistribution: () => request<StatusCount[]>("/api/dashboard/status-distribution"),
