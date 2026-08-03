@@ -64,6 +64,7 @@ export default function FollowUpsPage() {
                       </a>
                     )}
                   </div>
+                  <p className="text-sm text-ink-soft">{app.company_name || "Company not set"}</p>
                   <p className="mt-0.5 font-mono text-xs text-ink-soft">
                     Follow-up was due {formatDateShort(app.follow_up_at)}
                   </p>

@@ -117,3 +117,14 @@ class Application(Base):
     interview_rounds: Mapped[list["InterviewRound"]] = relationship(
         back_populates="application", cascade="all, delete-orphan", order_by="InterviewRound.created_at"
     )
+
+    @property
+    def company_name(self) -> str | None:
+        """Convenience accessor so ApplicationOut can expose company_name
+        directly (Pydantic's from_attributes reads this like any other
+        attribute) without every route having to flatten it manually."""
+        return self.company.name if self.company else None
+
+    @property
+    def platform_name(self) -> str | None:
+        return self.platform.name if self.platform else None

@@ -133,10 +133,12 @@ export default function ApplicationsPage() {
                       </span>
                     )}
                   </div>
+                  <p className="text-sm text-ink-soft">{app.company_name || "Company not set"}</p>
                   <p className="mt-0.5 font-mono text-xs text-ink-soft">
                     {formatDateShort(app.applied_at)}
                     {app.location ? ` · ${app.location}` : ""}
                     {app.work_type !== "unknown" ? ` · ${app.work_type}` : ""}
+                    {app.platform_name ? ` · ${app.platform_name}` : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

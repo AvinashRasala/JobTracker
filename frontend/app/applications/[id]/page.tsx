@@ -29,6 +29,7 @@ export default function ApplicationDetailPage() {
   });
 
   const [form, setForm] = useState({
+    company_name: "",
     location: "",
     expected_ctc: "",
     offered_ctc: "",
@@ -41,6 +42,7 @@ export default function ApplicationDetailPage() {
   useEffect(() => {
     if (application) {
       setForm({
+        company_name: application.company_name || "",
         location: application.location || "",
         expected_ctc: application.expected_ctc?.toString() || "",
         offered_ctc: application.offered_ctc?.toString() || "",
@@ -67,6 +69,7 @@ export default function ApplicationDetailPage() {
   const updateMutation = useMutation({
     mutationFn: () => {
       const payload: Record<string, unknown> = {
+        company_name: form.company_name || undefined,
         location: form.location || null,
         referred_by_name: form.referred_by_name || null,
         referred_by_email: form.referred_by_email || null,
@@ -113,8 +116,10 @@ export default function ApplicationDetailPage() {
               </a>
             )}
           </h2>
+          <p className="mt-1 text-base font-medium text-ink-soft">{application.company_name || "Company not set"}</p>
           <p className="mt-1 font-mono text-sm text-ink-soft">
             Applied {formatDateShort(application.applied_at)}
+            {application.platform_name ? ` · via ${application.platform_name}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -143,6 +148,15 @@ export default function ApplicationDetailPage() {
             }}
             className="mt-4 space-y-4"
           >
+            <div>
+              <Label htmlFor="company_name">Company</Label>
+              <Input
+                id="company_name"
+                required
+                value={form.company_name}
+                onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))}
+              />
+            </div>
             <div>
               <Label htmlFor="location">Location</Label>
               <Input

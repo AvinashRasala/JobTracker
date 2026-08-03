@@ -292,6 +292,11 @@ def update_application(
     application = _get_owned_application(db, application_id, current_user.id)
 
     updates = payload.model_dump(exclude_unset=True)
+    company_name = updates.pop("company_name", None)
+    if company_name:
+        company = _get_or_create_company(db, company_name)
+        application.company_id = company.id
+
     for field, value in updates.items():
         setattr(application, field, value)
 

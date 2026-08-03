@@ -54,6 +54,8 @@ export type DataSource = "gmail_parser" | "chrome_extension" | "manual";
 export interface Application {
   id: string;
   role_title: string;
+  company_name: string | null;
+  platform_name: string | null;
   job_url: string | null;
   location: string | null;
   salary_min: number | null;

@@ -449,6 +449,26 @@ back through your sync history.
 
 ## Known fixes since initial release
 
+**Company name wasn't shown anywhere after creating an application.**
+`ApplicationOut` (the response shape for reading applications back) never
+actually included `company_name` or `platform_name` — they were only ever
+sent when *creating* an application, never when reading one back via the
+list, detail, or follow-ups views. This meant there was genuinely no way
+to see which company an application was for without remembering it. Fixed by:
+- Adding `company_name`/`platform_name` convenience properties on the
+  `Application` model and including them in `ApplicationOut`
+- Displaying company name prominently in the applications list, follow-ups
+  list, and application detail header
+- Adding the ability to **edit** the company name from the application
+  detail page — previously there was no way to fix it even manually, which
+  matters given Gmail-parsed company names are sometimes imperfect (e.g.
+  falling back to the platform's own domain, like "hirist.tech", when an
+  email doesn't clearly state the hiring company)
+
+Covered by a permanent regression test
+(`tests/test_applications.py::test_company_name_present_in_create_detail_and_list`).
+
+
 **Timestamps were displaying ~5.5 hours off for IST users (and off by
 whatever the viewer's UTC offset is, generally).** The backend correctly
 stores everything in UTC, but serializes datetimes without a timezone

@@ -41,6 +41,7 @@ class ApplicationStatusUpdate(BaseModel):
 class ApplicationUpdate(BaseModel):
     """General-purpose partial update for fields that aren't the pipeline status."""
     role_title: str | None = None
+    company_name: str | None = None
     location: str | None = None
     job_url: str | None = None
     salary_min: float | None = None
@@ -63,6 +64,8 @@ class ApplicationOut(BaseModel):
 
     id: uuid.UUID
     role_title: str
+    company_name: str | None
+    platform_name: str | None
     job_url: str | None
     location: str | None
     salary_min: float | None
