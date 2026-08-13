@@ -75,6 +75,46 @@ export interface Application {
   referred_by_email: string | null;
   referred_by_relationship: string | null;
   follow_up_at: string | null;
+  job_description: string | null;
+  resume_document_id: string | null;
+  resume_document_label: string | null;
+  cover_letter_document_id: string | null;
+  cover_letter_document_label: string | null;
+}
+
+export type DocumentType = "resume" | "cover_letter" | "portfolio" | "certificate" | "other";
+
+export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  resume: "Resume",
+  cover_letter: "Cover Letter",
+  portfolio: "Portfolio",
+  certificate: "Certificate",
+  other: "Other",
+};
+
+export interface AppDocument {
+  id: string;
+  document_type: DocumentType;
+  label: string;
+  file_path: string;
+  original_filename: string | null;
+  file_size: number | null;
+  mime_type: string | null;
+  created_at: string;
+}
+
+export interface FunnelStage {
+  stage: string;
+  count: number;
+}
+
+export interface UpcomingInterview {
+  id: string;
+  application_id: string;
+  role_title: string;
+  company_name: string | null;
+  round_name: string;
+  scheduled_at: string;
 }
 
 export type InterviewMode = "phone" | "video" | "onsite" | "assessment" | "other";
@@ -136,6 +176,7 @@ export interface UserProfile {
   current_ctc: number | null;
   current_notice_period_days: number | null;
   years_of_experience: number | null;
+  resume_text: string | null;
 }
 
 export interface ApplicationListResponse {

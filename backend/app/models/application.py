@@ -79,7 +79,9 @@ class Application(Base):
 
     external_application_id: Mapped[str] = mapped_column(String(255), nullable=True)
     job_description: Mapped[str] = mapped_column(Text, nullable=True)
-    resume_used: Mapped[str] = mapped_column(String(500), nullable=True)
+    resume_used: Mapped[str] = mapped_column(String(500), nullable=True)  # free-text note, kept for backward compat
+    resume_document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
+    cover_letter_document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
 
     # Compensation & offer tracking -- useful for both a fresher's first
     # offer and an experienced hire comparing multiple offers.
@@ -117,6 +119,16 @@ class Application(Base):
     interview_rounds: Mapped[list["InterviewRound"]] = relationship(
         back_populates="application", cascade="all, delete-orphan", order_by="InterviewRound.created_at"
     )
+    resume_document: Mapped["Document"] = relationship(foreign_keys=[resume_document_id])
+    cover_letter_document: Mapped["Document"] = relationship(foreign_keys=[cover_letter_document_id])
+
+    @property
+    def resume_document_label(self) -> str | None:
+        return self.resume_document.label if self.resume_document else None
+
+    @property
+    def cover_letter_document_label(self) -> str | None:
+        return self.cover_letter_document.label if self.cover_letter_document else None
 
     @property
     def company_name(self) -> str | None:

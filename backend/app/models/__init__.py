@@ -6,6 +6,7 @@ from app.models.application import Application, ApplicationStatus, WorkType, Emp
 from app.models.status_history import StatusHistory, Note
 from app.models.interview import InterviewRound, InterviewMode, InterviewOutcome
 from app.models.gmail_sync import ProcessedGmailMessage
+from app.models.document import Document, DocumentType
 
 __all__ = [
     "User", "Company", "Platform", "DEFAULT_PLATFORMS", "Recruiter",
@@ -13,4 +14,5 @@ __all__ = [
     "StatusHistory", "Note",
     "InterviewRound", "InterviewMode", "InterviewOutcome",
     "ProcessedGmailMessage",
+    "Document", "DocumentType",
 ]

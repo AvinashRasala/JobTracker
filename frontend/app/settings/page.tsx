@@ -3,13 +3,19 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Camera, Trash2, Mail, RefreshCw, CheckCircle2, Undo2, ChevronDown, ChevronRight } from "lucide-react";
+import { Camera, Trash2, Mail, RefreshCw, CheckCircle2, Undo2, ChevronDown, ChevronRight, BellRing } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { api, resolveAssetUrl, ApiError, clearToken } from "@/lib/api";
+import {
+  requestNotificationPermission,
+  getNotificationPermission,
+  areRemindersEnabled,
+  setRemindersEnabled,
+} from "@/lib/notifications";
 import { useAuth } from "@/lib/auth-context";
 import { ApplicationStatus, STATUS_LABELS } from "@/lib/types";
 import { formatDateTime } from "@/lib/dates";
@@ -111,12 +117,16 @@ function SettingsPageInner() {
     },
   });
 
-  const [profileForm, setProfileForm] = useState({ full_name: "", phone_number: "" });
+  const [profileForm, setProfileForm] = useState({ full_name: "", phone_number: "", resume_text: "" });
   const [profileSaved, setProfileSaved] = useState(false);
 
   useEffect(() => {
     if (profile) {
-      setProfileForm({ full_name: profile.full_name || "", phone_number: profile.phone_number || "" });
+      setProfileForm({
+        full_name: profile.full_name || "",
+        phone_number: profile.phone_number || "",
+        resume_text: profile.resume_text || "",
+      });
     }
   }, [profile]);
 
@@ -175,6 +185,28 @@ function SettingsPageInner() {
   const [deletePassword, setDeletePassword] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // --- Interview reminders ---
+  const [remindersOn, setRemindersOn] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<string>("default");
+
+  useEffect(() => {
+    setRemindersOn(areRemindersEnabled());
+    setNotifPermission(getNotificationPermission());
+  }, []);
+
+  const toggleReminders = async () => {
+    if (!remindersOn) {
+      const granted = await requestNotificationPermission();
+      setNotifPermission(getNotificationPermission());
+      if (!granted) return;
+      setRemindersEnabled(true);
+      setRemindersOn(true);
+    } else {
+      setRemindersEnabled(false);
+      setRemindersOn(false);
+    }
+  };
 
   const deactivateMutation = useMutation({
     mutationFn: () => api.deactivateAccount(),
@@ -273,6 +305,17 @@ function SettingsPageInner() {
                 value={profileForm.phone_number}
                 onChange={(e) => setProfileForm((f) => ({ ...f, phone_number: e.target.value }))}
                 placeholder="+91 98765 43210"
+              />
+            </div>
+            <div>
+              <Label htmlFor="resume_text">Resume text (for AI features)</Label>
+              <textarea
+                id="resume_text"
+                rows={6}
+                value={profileForm.resume_text}
+                onChange={(e) => setProfileForm((f) => ({ ...f, resume_text: e.target.value }))}
+                placeholder="Paste your resume text here — used for AI match scoring and cover letter generation"
+                className="w-full rounded-md border border-hairline bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-ledger focus:outline-none"
               />
             </div>
             <div className="flex items-center gap-3">
@@ -474,6 +517,34 @@ function SettingsPageInner() {
             )}
           </Card>
         )}
+
+        {/* Interview reminders */}
+        <Card className="p-5 lg:col-span-2">
+          <div className="flex items-center gap-2">
+            <BellRing size={16} className="text-ledger" />
+            <h3 className="font-display text-sm font-semibold text-ink">Interview reminders</h3>
+          </div>
+          <p className="mt-1 text-sm text-ink-soft">
+            Browser notification ~2 hours before a scheduled interview. Only works while this tab is
+            open — not a true background push notification.
+          </p>
+
+          {notifPermission === "unsupported" ? (
+            <p className="mt-3 text-sm text-ink-soft">Your browser doesn't support notifications.</p>
+          ) : notifPermission === "denied" ? (
+            <p className="mt-3 text-sm text-stamp-red">
+              Notifications are blocked for this site in your browser settings. Enable them there to use
+              this feature.
+            </p>
+          ) : (
+            <div className="mt-3 flex items-center gap-3">
+              <Button size="sm" variant={remindersOn ? "secondary" : "primary"} onClick={toggleReminders}>
+                {remindersOn ? "Turn off reminders" : "Turn on reminders"}
+              </Button>
+              {remindersOn && <span className="text-xs text-stamp-green">Enabled</span>}
+            </div>
+          )}
+        </Card>
 
         {/* Danger zone */}
         <Card className="border-stamp-red/40 p-5 lg:col-span-2">

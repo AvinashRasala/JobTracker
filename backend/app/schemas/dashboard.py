@@ -34,3 +34,8 @@ class PlatformCount(BaseModel):
 class DailyCount(BaseModel):
     date: str
     count: int
+
+
+class FunnelStage(BaseModel):
+    stage: str
+    count: int

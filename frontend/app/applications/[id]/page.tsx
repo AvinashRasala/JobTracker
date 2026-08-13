@@ -11,6 +11,7 @@ import { Input, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { StatusStamp } from "@/components/ui/status-stamp";
 import { InterviewRoundsPanel } from "@/components/interview-rounds-panel";
+import { AiFeaturesPanel } from "@/components/ai-features-panel";
 import { api } from "@/lib/api";
 import { ApplicationStatus, STATUS_LABELS } from "@/lib/types";
 import { formatDateShort } from "@/lib/dates";
@@ -37,6 +38,9 @@ export default function ApplicationDetailPage() {
     referred_by_name: "",
     referred_by_email: "",
     referred_by_relationship: "",
+    job_description: "",
+    resume_document_id: "",
+    cover_letter_document_id: "",
   });
 
   useEffect(() => {
@@ -50,6 +54,9 @@ export default function ApplicationDetailPage() {
         referred_by_name: application.referred_by_name || "",
         referred_by_email: application.referred_by_email || "",
         referred_by_relationship: application.referred_by_relationship || "",
+        job_description: application.job_description || "",
+        resume_document_id: application.resume_document_id || "",
+        cover_letter_document_id: application.cover_letter_document_id || "",
       });
     }
   }, [application]);
@@ -66,6 +73,8 @@ export default function ApplicationDetailPage() {
     onSuccess: invalidateAll,
   });
 
+  const { data: documents } = useQuery({ queryKey: ["documents"], queryFn: () => api.listDocuments() });
+
   const updateMutation = useMutation({
     mutationFn: () => {
       const payload: Record<string, unknown> = {
@@ -74,6 +83,9 @@ export default function ApplicationDetailPage() {
         referred_by_name: form.referred_by_name || null,
         referred_by_email: form.referred_by_email || null,
         referred_by_relationship: form.referred_by_relationship || null,
+        job_description: form.job_description || null,
+        resume_document_id: form.resume_document_id || null,
+        cover_letter_document_id: form.cover_letter_document_id || null,
       };
       payload.expected_ctc = form.expected_ctc ? Number(form.expected_ctc) : null;
       payload.offered_ctc = form.offered_ctc ? Number(form.offered_ctc) : null;
@@ -195,6 +207,61 @@ export default function ApplicationDetailPage() {
                 onChange={(e) => setForm((f) => ({ ...f, notice_period_days: e.target.value }))}
               />
             </div>
+            <div>
+              <Label htmlFor="job_description">Job description</Label>
+              <textarea
+                id="job_description"
+                rows={4}
+                value={form.job_description}
+                onChange={(e) => setForm((f) => ({ ...f, job_description: e.target.value }))}
+                placeholder="Paste the job description here — used for AI match scoring and cover letter generation"
+                className="w-full rounded-md border border-hairline bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-soft/60 focus:border-ledger focus:outline-none"
+              />
+            </div>
+            <div className="border-t border-hairline pt-4">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-soft">Documents</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="resume_document_id">Resume used</Label>
+                  <Select
+                    id="resume_document_id"
+                    value={form.resume_document_id}
+                    onChange={(e) => setForm((f) => ({ ...f, resume_document_id: e.target.value }))}
+                  >
+                    <option value="">None selected</option>
+                    {documents
+                      ?.filter((d) => d.document_type === "resume")
+                      .map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.label}
+                        </option>
+                      ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="cover_letter_document_id">Cover letter used</Label>
+                  <Select
+                    id="cover_letter_document_id"
+                    value={form.cover_letter_document_id}
+                    onChange={(e) => setForm((f) => ({ ...f, cover_letter_document_id: e.target.value }))}
+                  >
+                    <option value="">None selected</option>
+                    {documents
+                      ?.filter((d) => d.document_type === "cover_letter")
+                      .map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.label}
+                        </option>
+                      ))}
+                  </Select>
+                </div>
+              </div>
+              {!documents || documents.length === 0 ? (
+                <p className="mt-2 text-xs text-ink-soft">
+                  No documents uploaded yet — <a href="/documents" className="text-ledger hover:underline">upload one</a>.
+                </p>
+              ) : null}
+            </div>
             <div className="border-t border-hairline pt-4">
               <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-soft">Referral</p>
               <div className="space-y-3">
@@ -236,6 +303,7 @@ export default function ApplicationDetailPage() {
         </Card>
 
         <InterviewRoundsPanel applicationId={applicationId} />
+        <AiFeaturesPanel applicationId={applicationId} />
       </div>
     </AppShell>
   );

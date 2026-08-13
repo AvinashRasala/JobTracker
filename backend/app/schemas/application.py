@@ -57,6 +57,8 @@ class ApplicationUpdate(BaseModel):
     referred_by_email: str | None = None
     referred_by_relationship: str | None = None
     follow_up_at: datetime | None = None
+    resume_document_id: uuid.UUID | None = None
+    cover_letter_document_id: uuid.UUID | None = None
 
 
 class ApplicationOut(BaseModel):
@@ -86,6 +88,11 @@ class ApplicationOut(BaseModel):
     referred_by_email: str | None
     referred_by_relationship: str | None
     follow_up_at: datetime | None
+    job_description: str | None
+    resume_document_id: uuid.UUID | None
+    resume_document_label: str | None
+    cover_letter_document_id: uuid.UUID | None
+    cover_letter_document_label: str | None
 
 
 class ApplicationListResponse(BaseModel):

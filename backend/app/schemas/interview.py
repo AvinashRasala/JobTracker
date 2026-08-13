@@ -40,3 +40,12 @@ class InterviewRoundOut(BaseModel):
     outcome: InterviewOutcome
     created_at: datetime
     updated_at: datetime
+
+
+class UpcomingInterviewOut(BaseModel):
+    id: uuid.UUID
+    application_id: uuid.UUID
+    role_title: str
+    company_name: str | None
+    round_name: str
+    scheduled_at: datetime

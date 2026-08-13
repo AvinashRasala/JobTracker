@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.api.routes import auth, applications, dashboard, interviews, gmail
+from app.api.routes import auth, applications, dashboard, gmail, documents, ai
+from app.api.routes import interviews as interviews_module
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -31,8 +32,11 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR), check_dir=False), na
 app.include_router(auth.router)
 app.include_router(applications.router)
 app.include_router(dashboard.router)
-app.include_router(interviews.router)
+app.include_router(interviews_module.router)
+app.include_router(interviews_module.upcoming_router)
 app.include_router(gmail.router)
+app.include_router(documents.router)
+app.include_router(ai.router)
 
 
 @app.get("/api/health", tags=["health"])

@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { StatusDistributionChart } from "@/components/charts/status-distribution-chart";
 import { PlatformDistributionChart } from "@/components/charts/platform-distribution-chart";
 import { ApplicationsPerDayChart } from "@/components/charts/applications-per-day-chart";
+import { FunnelChart } from "@/components/charts/funnel-chart";
+import { ApplicationsHeatmap } from "@/components/charts/applications-heatmap";
 import { api } from "@/lib/api";
 
 export default function DashboardPage() {
@@ -14,6 +16,8 @@ export default function DashboardPage() {
   const statusDist = useQuery({ queryKey: ["status-distribution"], queryFn: api.statusDistribution });
   const platformDist = useQuery({ queryKey: ["platform-distribution"], queryFn: api.platformDistribution });
   const perDay = useQuery({ queryKey: ["applications-per-day"], queryFn: () => api.applicationsPerDay(30) });
+  const funnel = useQuery({ queryKey: ["funnel"], queryFn: api.funnel });
+  const heatmapData = useQuery({ queryKey: ["applications-heatmap"], queryFn: () => api.applicationsPerDay(365) });
 
   const s = stats.data;
 
@@ -87,6 +91,29 @@ export default function DashboardPage() {
               <div className="mt-2">
                 {platformDist.data && platformDist.data.length > 0 ? (
                   <PlatformDistributionChart data={platformDist.data} />
+                ) : (
+                  <EmptyChart />
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-5">
+              <h3 className="font-display text-sm font-semibold text-ink">Pipeline funnel</h3>
+              <p className="mt-0.5 text-xs text-ink-soft">Applications that ever reached each stage</p>
+              <div className="mt-4">
+                {funnel.data && funnel.data.some((f) => f.count > 0) ? (
+                  <FunnelChart data={funnel.data} />
+                ) : (
+                  <EmptyChart />
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-5">
+              <h3 className="font-display text-sm font-semibold text-ink">Activity — last 12 months</h3>
+              <div className="mt-4">
+                {heatmapData.data && heatmapData.data.length > 0 ? (
+                  <ApplicationsHeatmap data={heatmapData.data} />
                 ) : (
                   <EmptyChart />
                 )}

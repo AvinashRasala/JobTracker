@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -6,11 +7,15 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.database import get_db
 from app.models.application import Application
-from app.models.interview import InterviewRound
+from app.models.interview import InterviewRound, InterviewOutcome
 from app.models.user import User
-from app.schemas.interview import InterviewRoundCreate, InterviewRoundUpdate, InterviewRoundOut
+from app.schemas.interview import InterviewRoundCreate, InterviewRoundUpdate, InterviewRoundOut, UpcomingInterviewOut
 
 router = APIRouter(prefix="/api/applications/{application_id}/interviews", tags=["interviews"])
+
+# Separate top-level router (not nested under a specific application) for
+# "upcoming across everything" -- used by the interview-reminder feature.
+upcoming_router = APIRouter(prefix="/api/interviews", tags=["interviews"])
 
 
 def _get_owned_application(db: Session, application_id: uuid.UUID, user_id: uuid.UUID) -> Application:
@@ -94,3 +99,38 @@ def delete_interview_round(
     db.delete(round_)
     db.commit()
     return None
+
+
+@upcoming_router.get("/upcoming", response_model=list[UpcomingInterviewOut])
+def upcoming_interviews(
+    hours: int = 24,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Interview rounds scheduled within the next `hours`, still pending -- used for reminders."""
+    now = datetime.utcnow()
+    cutoff = now + timedelta(hours=hours)
+    rows = (
+        db.query(InterviewRound, Application)
+        .join(Application, Application.id == InterviewRound.application_id)
+        .filter(
+            Application.user_id == current_user.id,
+            InterviewRound.scheduled_at.isnot(None),
+            InterviewRound.scheduled_at >= now,
+            InterviewRound.scheduled_at <= cutoff,
+            InterviewRound.outcome == InterviewOutcome.PENDING,
+        )
+        .order_by(InterviewRound.scheduled_at)
+        .all()
+    )
+    return [
+        UpcomingInterviewOut(
+            id=round_.id,
+            application_id=application.id,
+            role_title=application.role_title,
+            company_name=application.company_name,
+            round_name=round_.round_name,
+            scheduled_at=round_.scheduled_at,
+        )
+        for round_, application in rows
+    ]

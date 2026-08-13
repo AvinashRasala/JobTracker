@@ -11,6 +11,10 @@ import type {
   InterviewRound,
   OfferComparisonItem,
   UserProfile,
+  AppDocument,
+  DocumentType,
+  FunnelStage,
+  UpcomingInterview,
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -243,6 +247,48 @@ export const api = {
   platformDistribution: () => request<PlatformCount[]>("/api/dashboard/platform-distribution"),
   applicationsPerDay: (days = 30) =>
     request<DailyCount[]>(`/api/dashboard/applications-per-day?days=${days}`),
+  funnel: () => request<FunnelStage[]>("/api/dashboard/funnel"),
+
+  // --- Documents ---
+  listDocuments: (documentType?: DocumentType) =>
+    request<AppDocument[]>(`/api/documents${documentType ? `?document_type=${documentType}` : ""}`),
+
+  uploadDocument: async (file: File, label: string, documentType: DocumentType) => {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("label", label);
+    formData.append("document_type", documentType);
+    const res = await fetch(`${API_URL}/api/documents`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => ({ detail: "Upload failed" }));
+      throw new ApiError(res.status, detail.detail || "Upload failed");
+    }
+    return res.json() as Promise<AppDocument>;
+  },
+
+  deleteDocument: (id: string) => request<void>(`/api/documents/${id}`, { method: "DELETE" }),
+
+  // --- AI features ---
+  aiMatchScore: (applicationId: string) =>
+    request<{ score: number; explanation: string; matching_skills: string[]; missing_skills: string[] }>(
+      `/api/ai/match-score/${applicationId}`,
+      { method: "POST" }
+    ),
+
+  aiCoverLetter: (applicationId: string) =>
+    request<{ cover_letter: string }>(`/api/ai/cover-letter/${applicationId}`, { method: "POST" }),
+
+  aiFollowUpEmail: (applicationId: string) =>
+    request<{ email: string }>(`/api/ai/follow-up-email/${applicationId}`, { method: "POST" }),
+
+  // --- Interview reminders ---
+  upcomingInterviews: (hours = 24) =>
+    request<UpcomingInterview[]>(`/api/interviews/upcoming?hours=${hours}`),
 };
 
 export { ApiError };

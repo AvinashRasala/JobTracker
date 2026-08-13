@@ -634,6 +634,95 @@ extension/
     └── test_extractor.js
 ```
 
+---
+
+# Module 7: AI Features, Document Management, More Charts, Interview Reminders
+
+## Document management
+
+Upload resumes, cover letters, portfolios, and certificates once; attach
+the specific version used to each application from its detail page.
+
+- `GET/POST /api/documents`, `DELETE /api/documents/{id}`
+- Files stored under `backend/static/documents/{user_id}/`, served via
+  the existing `/static` mount (same pattern as avatars)
+- New `resume_document_id` / `cover_letter_document_id` on `Application`
+- New **Documents** page (nav item) for upload/browse/delete
+- Tested end-to-end against real Postgres: upload → served back correctly
+  → attached to an application → deleted (`tests/test_documents.py`)
+
+## AI features (requires an OpenAI API key)
+
+- **Resume match score** — 0–100 score + explanation + matching/missing
+  skills, based on the application's job description and your resume text
+- **Cover letter generation**
+- **Follow-up email drafting**
+
+All three live as buttons on the application detail page. Uses `httpx`
+directly against OpenAI's Chat Completions API (no SDK dependency, same
+pattern as the Gmail client).
+
+**What was tested without a real API key**: response parsing (handles
+markdown-code-fence-wrapped JSON, clamps out-of-range scores, raises a
+clear error on unparseable responses), and every API endpoint's error
+handling (missing resume text → 400, missing API key → 503, success paths)
+with the OpenAI call itself mocked. **Not tested**: actual OpenAI response
+quality — that only matters once you provide a real key.
+
+### Setting up an OpenAI API key
+
+1. Go to **platform.openai.com** → sign up or log in
+2. **API keys** (left sidebar) → **Create new secret key**
+3. Copy it immediately — it's only shown once
+4. Add billing: **Settings → Billing** → add a payment method (the API is
+   pay-per-use, not covered by a ChatGPT Plus subscription — a few dollars
+   covers a very large number of these requests)
+5. Set on both local `.env` and Render:
+   ```
+   OPENAI_API_KEY=sk-...
+   ```
+
+Paste your resume as plain text in **Settings** (a proper text field, not
+a file upload — AI features read this directly, since parsing text out of
+uploaded PDFs/DOCX reliably is its own can of worms this skips entirely).
+
+## More dashboard charts
+
+- **Pipeline funnel** — for each stage (Applied → Viewed → Under Review →
+  Assessment → Interview → Offer), counts every application that *ever*
+  reached that stage (via status history), not just ones currently sitting
+  there — so an application that moved on to Offer still counts toward
+  Interview
+- **Activity heatmap** — GitHub-contributions-style grid of the last 12
+  months, reusing the existing `applications-per-day` endpoint with a
+  365-day window
+
+`GET /api/dashboard/funnel` tested end-to-end for the "passed through but
+moved on" behavior (`tests/test_funnel_and_interviews.py`).
+
+## Interview reminders
+
+Browser notification ~2 hours before a scheduled interview. Toggle in
+Settings (requests browser notification permission on enable).
+
+**Honest limitation**: this only works while the app tab is open — a
+component polls `GET /api/interviews/upcoming` every 5 minutes and fires
+a `Notification` for anything newly in range. This is **not** a true
+background push notification (closing the tab stops reminders); that
+would need a service worker, VAPID keys, and a backend push-subscription
+store — a meaningfully bigger feature. Happy to build that if it matters
+to you.
+
+## Upgrading an existing deployment
+
+Adds migration `0006` (documents table, `resume_text`, document links on
+applications). No data wiped:
+```bash
+docker compose up --build -d
+docker compose exec backend alembic upgrade head
+```
+(Automatic on Render via `start.sh`.)
+
 ## Next modules (in order)
 
 1. ~~Frontend dashboard~~ ✅ done
@@ -641,7 +730,7 @@ extension/
 3. ~~Account management: password visibility, profile, deactivate/delete~~ ✅ done
 4. ~~Gmail integration~~ ✅ done
 5. ~~Chrome extension~~ ✅ done
-6. **AI features** — ATS match score, cover letter generation, follow-up emails
-7. **Notifications, calendar sync, document management, exports (Excel/PDF)**
+6. ~~AI features, document management, more charts, interview reminders~~ ✅ done
+7. **Calendar sync, Excel/PDF exports, true background push notifications**
 
 Let me know which one to build next.

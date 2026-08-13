@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Boolean, DateTime, Numeric, Integer
+from sqlalchemy import String, Boolean, DateTime, Numeric, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,6 +32,13 @@ class User(Base):
     current_ctc: Mapped[float] = mapped_column(Numeric(12, 2), nullable=True)
     current_notice_period_days: Mapped[int] = mapped_column(Integer, nullable=True)
     years_of_experience: Mapped[float] = mapped_column(Numeric(4, 1), nullable=True)
+
+    # Plain-text resume content, pasted by the user, used as input for AI
+    # features (match score, cover letter generation). Kept separate from
+    # uploaded resume Documents (which may be PDF/DOCX and aren't parsed)
+    # to keep AI features simple and reliable rather than depending on
+    # brittle file-text-extraction.
+    resume_text: Mapped[str] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

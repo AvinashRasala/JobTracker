@@ -3,16 +3,18 @@
 import { ReactNode, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, ListChecks, LogOut, BellRing, Trophy, Settings } from "lucide-react";
+import { LayoutDashboard, ListChecks, LogOut, BellRing, Trophy, Settings, FileText } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { getToken } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { InterviewReminderPoller } from "@/components/interview-reminder-poller";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/applications", label: "Applications", icon: ListChecks },
   { href: "/follow-ups", label: "Follow-ups", icon: BellRing },
   { href: "/offers", label: "Offers", icon: Trophy },
+  { href: "/documents", label: "Documents", icon: FileText },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -61,6 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <main className="flex-1 overflow-y-auto px-8 py-8">{children}</main>
+      <InterviewReminderPoller />
     </div>
   );
 }

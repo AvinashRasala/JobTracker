@@ -29,6 +29,7 @@ class UserOut(BaseModel):
     current_ctc: float | None = None
     current_notice_period_days: int | None = None
     years_of_experience: float | None = None
+    resume_text: str | None = None
 
 
 class UserProfileUpdate(BaseModel):
@@ -37,6 +38,7 @@ class UserProfileUpdate(BaseModel):
     current_ctc: float | None = None
     current_notice_period_days: int | None = None
     years_of_experience: float | None = None
+    resume_text: str | None = None
 
 
 class PasswordChange(BaseModel):

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -11,7 +11,7 @@ from app.models.company import Company
 from app.models.platform import Platform
 from app.models.status_history import StatusHistory
 from app.models.user import User
-from app.schemas.dashboard import DashboardStats, StatusCount, PlatformCount, DailyCount
+from app.schemas.dashboard import DashboardStats, StatusCount, PlatformCount, DailyCount, FunnelStage
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -151,3 +151,49 @@ def applications_per_day(days: int = 30, db: Session = Depends(get_db), current_
         .all()
     )
     return [DailyCount(date=str(d), count=c) for d, c in rows]
+
+
+# Ordered pipeline stages for the funnel chart. Grouped where several raw
+# statuses represent the same conceptual stage (e.g. all interview rounds).
+FUNNEL_STAGES: list[tuple[str, set[ApplicationStatus]]] = [
+    ("Applied", {ApplicationStatus.APPLIED}),
+    ("Viewed", {ApplicationStatus.APPLICATION_VIEWED}),
+    ("Under Review", {ApplicationStatus.UNDER_REVIEW}),
+    ("Assessment", {ApplicationStatus.ASSESSMENT, ApplicationStatus.CODING_TEST}),
+    ("Interview", {
+        ApplicationStatus.INTERVIEW_ROUND_1, ApplicationStatus.INTERVIEW_ROUND_2,
+        ApplicationStatus.INTERVIEW_ROUND_3, ApplicationStatus.HR_INTERVIEW,
+    }),
+    ("Offer", {ApplicationStatus.OFFER_RECEIVED, ApplicationStatus.JOINED}),
+]
+
+
+@router.get("/funnel", response_model=list[FunnelStage])
+def pipeline_funnel(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """
+    For each pipeline stage, counts applications that ever reached that
+    stage (via status_history) OR are currently at it -- not just
+    "currently at this exact status", since an application that moved on
+    to Offer still did pass through Interview.
+    """
+    results = []
+    for label, statuses in FUNNEL_STAGES:
+        reached_ids_subquery = (
+            db.query(StatusHistory.application_id)
+            .filter(StatusHistory.to_status.in_(statuses))
+            .subquery()
+        )
+        count = (
+            db.query(Application.id)
+            .filter(
+                Application.user_id == current_user.id,
+                or_(
+                    Application.status.in_(statuses),
+                    Application.id.in_(db.query(reached_ids_subquery)),
+                ),
+            )
+            .distinct()
+            .count()
+        )
+        results.append(FunnelStage(stage=label, count=count))
+    return results
